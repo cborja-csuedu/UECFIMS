@@ -14,6 +14,74 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// Debug route - remove after testing
+Route::get('/debug/notifications', function () {
+    $notifications = \App\Models\Notification::with('user', 'member')->latest()->take(10)->get();
+    $members = \App\Models\Member::with('user')->latest()->take(5)->get();
+    $secretaries = \App\Models\User::where('role', 'secretary')->get();
+    
+    return response()->json([
+        'recent_notifications' => $notifications,
+        'recent_members' => $members,
+        'secretaries' => $secretaries,
+        'total_notifications' => \App\Models\Notification::count(),
+    ]);
+});
+
+Route::get('/debug/test-member', function () {
+    try {
+        $user = \App\Models\User::where('email','user@example.com')->first();
+        if (!$user) {
+            return response()->json(['error' => 'User not found'], 404);
+        }
+        
+        $member = \App\Models\Member::create([
+            'name' => 'Test Member ' . time(),
+            'birthdate' => '1990-01-01',
+            'local_center' => 'Test Center',
+            'address' => 'Test Address',
+            'zip_code' => '12345',
+            'user_id' => $user->id,
+            'status' => 'submitted'
+        ]);
+        
+        // Manually create notification like the controller does
+        $secretaries = \App\Models\User::where('role', 'secretary')->get();
+        foreach ($secretaries as $secretary) {
+            \App\Models\Notification::create([
+                'user_id' => $secretary->id,
+                'member_id' => $member->id,
+                'type' => 'member_registration',
+                'title' => 'New Member Registration',
+                'message' => "A new member registration has been submitted. Member name: " . $member->name . ". Please review and verify the information.",
+                'read' => false,
+            ]);
+        }
+        
+        return response()->json([
+            'success' => true,
+            'member' => $member,
+            'notifications_created' => count($secretaries),
+            'secretaries' => $secretaries
+        ]);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+});
+
+Route::get('/debug/check-db', function () {
+    try {
+        \Illuminate\Support\Facades\DB::connection()->getPdo();
+        $tables = \Illuminate\Support\Facades\Schema::getTables();
+        return response()->json([
+            'status' => 'connected',
+            'tables' => $tables
+        ]);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+});
+
 // Authentication Routes
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
