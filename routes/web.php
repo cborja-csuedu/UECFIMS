@@ -28,6 +28,24 @@ Route::get('/debug/notifications', function () {
     ]);
 });
 
+Route::get('/debug/secretary-data/{userId}', function ($userId) {
+    try {
+        $notifications = \App\Models\Notification::where('user_id', $userId)
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get();
+        
+        return response()->json([
+            'status' => 'ok',
+            'user_id' => $userId,
+            'notification_count' => $notifications->count(),
+            'notifications' => $notifications,
+        ]);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+});
+
 Route::get('/debug/test-member', function () {
     try {
         $user = \App\Models\User::where('email','user@example.com')->first();
@@ -67,6 +85,37 @@ Route::get('/debug/test-member', function () {
     } catch (\Exception $e) {
         return response()->json(['error' => $e->getMessage()], 500);
     }
+});
+
+Route::get('/debug/dashboard-view', function () {
+    // Simulate what the dashboard view does
+    $userId = 1; // Secretary One
+    $notifications = \App\Models\Notification::where('user_id', $userId)
+        ->orderBy('created_at', 'desc')
+        ->limit(10)
+        ->get();
+    
+    $submissions = \App\Models\Member::orderBy('created_at', 'desc')->get();
+    
+    return response()->json([
+        'notifications_count' => $notifications->count(),
+        'notifications' => $notifications->map(function($n) {
+            return [
+                'id' => $n->id,
+                'user_id' => $n->user_id,
+                'title' => $n->title,
+                'read' => $n->read,
+            ];
+        }),
+        'submissions_count' => $submissions->count(),
+        'submissions' => $submissions->map(function($m) {
+            return [
+                'id' => $m->id,
+                'name' => $m->name,
+                'status' => $m->status,
+            ];
+        }),
+    ]);
 });
 
 Route::get('/debug/check-db', function () {
