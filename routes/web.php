@@ -87,35 +87,68 @@ Route::get('/debug/test-member', function () {
     }
 });
 
-Route::get('/debug/dashboard-view', function () {
-    // Simulate what the dashboard view does
-    $userId = 1; // Secretary One
-    $notifications = \App\Models\Notification::where('user_id', $userId)
-        ->orderBy('created_at', 'desc')
-        ->limit(10)
-        ->get();
-    
-    $submissions = \App\Models\Member::orderBy('created_at', 'desc')->get();
-    
-    return response()->json([
-        'notifications_count' => $notifications->count(),
-        'notifications' => $notifications->map(function($n) {
-            return [
-                'id' => $n->id,
-                'user_id' => $n->user_id,
-                'title' => $n->title,
-                'read' => $n->read,
-            ];
-        }),
-        'submissions_count' => $submissions->count(),
-        'submissions' => $submissions->map(function($m) {
-            return [
-                'id' => $m->id,
-                'name' => $m->name,
-                'status' => $m->status,
-            ];
-        }),
-    ]);
+Route::get('/debug/reset-test-data', function () {
+    try {
+        // Delete all members and their notifications
+        $members = \App\Models\Member::all();
+        foreach ($members as $member) {
+            \App\Models\Notification::where('member_id', $member->id)->delete();
+            $member->delete();
+        }
+        
+        return response()->json([
+            'status' => 'reset',
+            'message' => 'Test data cleared.',
+            'members_remaining' => \App\Models\Member::count(),
+            'notifications_remaining' => \App\Models\Notification::count(),
+        ]);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+});
+
+Route::get('/debug/workflow-test', function () {
+    try {
+        // Create a new member with 'submitted' status
+        $user = \App\Models\User::where('email', 'user@example.com')->first();
+        
+        $member = \App\Models\Member::create([
+            'name' => 'Workflow Test Member ' . time(),
+            'birthdate' => '1990-01-15',
+            'local_center' => 'Test Center',
+            'address' => 'Test Address 123',
+            'zip_code' => '12345',
+            'user_id' => $user->id,
+            'status' => 'submitted',
+        ]);
+        
+        // Create notifications for both secretaries
+        $secretaries = \App\Models\User::where('role', 'secretary')->get();
+        foreach ($secretaries as $secretary) {
+            \App\Models\Notification::create([
+                'user_id' => $secretary->id,
+                'member_id' => $member->id,
+                'type' => 'member_registration',
+                'title' => 'New Member Registration',
+                'message' => "New member: " . $member->name,
+                'read' => false,
+            ]);
+        }
+        
+        return response()->json([
+            'status' => 'created',
+            'member' => [
+                'id' => $member->id,
+                'name' => $member->name,
+                'status' => $member->status,
+            ],
+            'notifications_created' => count($secretaries),
+            'sec1_submitted_members' => \App\Models\Member::where('status', 'submitted')->count(),
+            'sec2_approved_members' => \App\Models\Member::where('status', 'approved')->count(),
+        ]);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
 });
 
 Route::get('/debug/check-db', function () {
