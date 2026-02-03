@@ -50,6 +50,7 @@ class MemberController extends Controller
 
         $data = $request->only(['name', 'birthdate', 'local_center', 'address', 'zip_code', 'phone', 'email', 'gender', 'civil_status', 'occupation', 'emergency_contact_name', 'emergency_contact_phone', 'baptism_date', 'membership_date']);
         $data['user_id'] = auth()->id();
+        $data['status'] = 'submitted'; // Explicitly set status for new members
 
         if ($request->hasFile('picture')) {
             $data['picture'] = $request->file('picture')->store('members/pictures', 'public');

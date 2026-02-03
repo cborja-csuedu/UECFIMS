@@ -24,11 +24,11 @@
 
     <div class="role-section">
         <h2>Secretary Two Dashboard</h2>
-        <p>As Secretary Two you can view submissions and respond to notifications. Approval is handled by Secretary One.</p>
+        <p>As Secretary Two you review verified member registrations. Members are approved by Secretary One before appearing here.</p>
 
         <div class="registrations-section">
-            <h2>Submitted Member Registrations</h2>
-            <p>Review member registration submissions (view only).</p>
+            <h2>Approved Member Registrations</h2>
+            <p>These registrations have been verified by Secretary One (view only).</p>
 
             @if($submissions->count() > 0)
                 <table class="registrations-table">
@@ -38,7 +38,7 @@
                             <th>Email</th>
                             <th>Local Center</th>
                             <th>Submitted By</th>
-                            <th>Submitted Date</th>
+                            <th>Approved Date</th>
                             <th>Status</th>
                         </tr>
                     </thead>
@@ -49,14 +49,14 @@
                                 <td>{{ $member->email ?? 'N/A' }}</td>
                                 <td>{{ $member->local_center }}</td>
                                 <td>{{ $member->user->name }}</td>
-                                <td>{{ $member->created_at->format('M d, Y H:i') }}</td>
+                                <td>{{ $member->updated_at->format('M d, Y H:i') }}</td>
                                 <td><span class="status-badge status-{{ $member->status }}">{{ ucfirst($member->status) }}</span></td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
             @else
-                <div class="empty-message">No member registrations submitted yet.</div>
+                <div class="empty-message">No approved member registrations yet. They will appear here after Secretary One approves them.</div>
             @endif
         </div>
     </div>

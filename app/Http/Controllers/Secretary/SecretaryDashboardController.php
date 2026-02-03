@@ -30,7 +30,8 @@ class SecretaryDashboardController extends Controller
             return redirect()->route('dashboard')->with('error', 'Unauthorized access.');
         }
 
-        $submissions = Member::orderBy('created_at', 'desc')->get();
+        // Secretary 1 sees only unverified (submitted) member registrations
+        $submissions = Member::where('status', 'submitted')->orderBy('created_at', 'desc')->get();
 
         return view('secretary.dashboard1', compact('submissions'));
     }
@@ -41,7 +42,8 @@ class SecretaryDashboardController extends Controller
             return redirect()->route('dashboard')->with('error', 'Unauthorized access.');
         }
 
-        $submissions = Member::orderBy('created_at', 'desc')->get();
+        // Secretary 2 sees only verified (approved) member registrations
+        $submissions = Member::where('status', 'approved')->orderBy('created_at', 'desc')->get();
 
         return view('secretary.dashboard2', compact('submissions'));
     }
