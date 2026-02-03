@@ -164,6 +164,77 @@ Route::get('/debug/check-db', function () {
     }
 });
 
+Route::get('/debug/secretary1-view', function () {
+    try {
+        // Exactly what Secretary 1 dashboard queries
+        $submissions = \App\Models\Member::where('status', 'submitted')->orderBy('created_at', 'desc')->get();
+        
+        // Also get notifications
+        $notifications = \App\Models\Notification::where('user_id', 1)
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get();
+        
+        return response()->json([
+            'secretary_1_view' => [
+                'submitted_members_count' => $submissions->count(),
+                'submitted_members' => $submissions->map(function($m) {
+                    return [
+                        'id' => $m->id,
+                        'name' => $m->name,
+                        'status' => $m->status,
+                        'created_at' => $m->created_at,
+                        'submitted_by' => $m->user->name,
+                    ];
+                }),
+                'notifications_count' => $notifications->count(),
+                'notifications' => $notifications->map(function($n) {
+                    return [
+                        'id' => $n->id,
+                        'title' => $n->title,
+                        'message' => $n->message,
+                        'read' => $n->read,
+                    ];
+                }),
+            ],
+        ]);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+});
+
+Route::get('/debug/testing-guide', function () {
+    $sec1_members = \App\Models\Member::where('status', 'submitted')->count();
+    $sec2_members = \App\Models\Member::where('status', 'approved')->count();
+    
+    return response()->json([
+        'status' => 'ready',
+        'message' => 'System is working correctly. Follow the steps below:',
+        'test_data' => [
+            'submitted_members_for_sec1' => $sec1_members,
+            'approved_members_for_sec2' => $sec2_members,
+        ],
+        'steps' => [
+            '1. Clear browser cache (Ctrl+Shift+Delete)',
+            '2. Go to http://localhost:8000',
+            '3. Click "Login"',
+            '4. Use credentials:',
+            '   Email: secretary1@example.com',
+            '   Password: password',
+            '5. After login, click "Dashboard"',
+            '6. You should be redirected to /secretary/dashboard1',
+            '7. You should see ' . $sec1_members . ' submitted member(s) in the table',
+            '8. You should see notifications at the top',
+        ],
+        'debug_endpoints' => [
+            '/debug/notifications - Shows all notifications in database',
+            '/debug/secretary1-view - Shows exactly what Secretary 1 sees',
+            '/debug/workflow-test - Create a test member',
+            '/debug/reset-test-data - Clear all test data',
+        ],
+    ]);
+});
+
 // Authentication Routes
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
